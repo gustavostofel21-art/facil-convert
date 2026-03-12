@@ -6,12 +6,18 @@ import Sidebar, { ResultItem } from '@/components/Sidebar';
 import dynamic from 'next/dynamic';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import { FileText, Image as ImageIcon, FileType, LayoutGrid } from 'lucide-react';
+import { FileText, Image as ImageIcon, FileType, LayoutGrid, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import * as pdfjs from 'pdfjs-dist';
 
 const PdfSplitter = dynamic(() => import('@/components/PdfSplitter'), { ssr: false });
 const HeicBatchConverter = dynamic(() => import('@/components/HeicBatchConverter'), { ssr: false });
 const PdfToImageConverter = dynamic(() => import('@/components/PdfToImageConverter'), { ssr: false });
+
+// Set worker source for v3
+if (typeof window !== 'undefined') {
+  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+}
 
 type Tool = 'split-pdf' | 'heic-batch' | 'pdf-to-image';
 
@@ -20,9 +26,21 @@ export default function Home() {
   const [results, setResults] = useState<ResultItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progressText, setProgressText] = useState('');
+  const [toolKey, setToolKey] = useState(0);
+
+  // Batching state
+  const [sourcePdf, setSourcePdf] = useState<File | null>(null);
+  const [totalPdfPages, setTotalPdfPages] = useState(0);
+  const [currentBatchStart, setCurrentBatchStart] = useState(1);
 
   const handleResults = useCallback((newResults: ResultItem[]) => {
     setResults(prev => [...newResults, ...prev]);
+  }, []);
+
+  const handlePdfReady = useCallback((file: File, pageCount: number) => {
+    setSourcePdf(file);
+    setTotalPdfPages(pageCount);
+    setCurrentBatchStart(1);
   }, []);
 
   const handleDownloadAll = async () => {
@@ -38,8 +56,85 @@ export default function Home() {
   };
 
   const handleClear = () => {
+    // Revoke all URLs to prevent memory leaks
     results.forEach(item => URL.revokeObjectURL(item.url));
+    
+    // Reset all states
     setResults([]);
+    setIsProcessing(false);
+    setProgressText('');
+    setSourcePdf(null);
+    setTotalPdfPages(0);
+    setCurrentBatchStart(1);
+    
+    // Increment key to force re-mount of tool components (resets internal errors/files)
+    setToolKey(prev => prev + 1);
+  };
+
+  const processBatch = async (file: File, start: number, total: number) => {
+    setIsProcessing(true);
+    const imageResults: ResultItem[] = [];
+    const end = Math.min(start + 19, total);
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
+      const pdf = await loadingTask.promise;
+
+      for (let i = start; i <= end; i++) {
+        setProgressText(`Convertendo página ${i} de ${total} para PNG...`);
+        
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale: 2.0 });
+        
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        if (!context) continue;
+        
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        
+        await page.render({
+          canvasContext: context,
+          viewport: viewport
+        }).promise;
+        
+        const dataUrl = canvas.toDataURL('image/png');
+        const response = await fetch(dataUrl);
+        const blob = await response.blob();
+        
+        imageResults.push({
+          id: `conv-${Date.now()}-${i}`,
+          name: `Pagina_${i}.png`,
+          url: dataUrl,
+          type: 'image',
+          blob
+        });
+      }
+
+      // Clear previous batch results
+      results.forEach(item => URL.revokeObjectURL(item.url));
+      setResults(imageResults);
+      setCurrentBatchStart(start);
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao converter páginas para imagem.');
+    } finally {
+      setIsProcessing(false);
+      setProgressText('');
+    }
+  };
+
+  const handleConvertToPng = async () => {
+    if (!sourcePdf) return;
+    await processBatch(sourcePdf, 1, totalPdfPages);
+  };
+
+  const handleNextBatch = async () => {
+    if (!sourcePdf) return;
+    const nextStart = currentBatchStart + 20;
+    if (nextStart > totalPdfPages) return;
+    await processBatch(sourcePdf, nextStart, totalPdfPages);
   };
 
   return (
@@ -72,7 +167,7 @@ export default function Home() {
                 }`}
               >
                 <ImageIcon className="w-5 h-5" />
-                <span className="font-semibold text-sm">HEIC em Lote</span>
+                <span className="font-semibold text-sm">HEIC para PNG</span>
               </button>
               <button
                 onClick={() => setActiveTool('pdf-to-image')}
@@ -92,7 +187,7 @@ export default function Home() {
               <AnimatePresence mode="wait">
                 {activeTool === 'split-pdf' && (
                   <motion.div
-                    key="split-pdf"
+                    key={`split-pdf-${toolKey}`}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
@@ -101,12 +196,13 @@ export default function Home() {
                       onResults={handleResults} 
                       setIsProcessing={setIsProcessing} 
                       setProgressText={setProgressText} 
+                      onPdfReady={handlePdfReady}
                     />
                   </motion.div>
                 )}
                 {activeTool === 'heic-batch' && (
                   <motion.div
-                    key="heic-batch"
+                    key={`heic-batch-${toolKey}`}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
@@ -120,7 +216,7 @@ export default function Home() {
                 )}
                 {activeTool === 'pdf-to-image' && (
                   <motion.div
-                    key="pdf-to-image"
+                    key={`pdf-to-image-${toolKey}`}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
@@ -129,6 +225,7 @@ export default function Home() {
                       onResults={handleResults} 
                       setIsProcessing={setIsProcessing} 
                       setProgressText={setProgressText} 
+                      onPdfReady={handlePdfReady}
                     />
                   </motion.div>
                 )}
@@ -144,6 +241,11 @@ export default function Home() {
           progressText={progressText}
           onDownloadAll={handleDownloadAll}
           onClear={handleClear}
+          onConvertToPng={handleConvertToPng}
+          activeTool={activeTool}
+          totalPdfPages={totalPdfPages}
+          currentBatchStart={currentBatchStart}
+          onNextBatch={handleNextBatch}
         />
       </div>
     </div>

@@ -12,9 +12,10 @@ interface PdfSplitterProps {
   onResults: (results: ResultItem[]) => void;
   setIsProcessing: (val: boolean) => void;
   setProgressText: (val: string) => void;
+  onPdfReady?: (file: File, pageCount: number) => void;
 }
 
-export default function PdfSplitter({ onResults, setIsProcessing, setProgressText }: PdfSplitterProps) {
+export default function PdfSplitter({ onResults, setIsProcessing, setProgressText, onPdfReady }: PdfSplitterProps) {
   const [error, setError] = useState<string | null>(null);
 
   const handleFileSelect = async (files: File | File[]) => {
@@ -37,7 +38,10 @@ export default function PdfSplitter({ onResults, setIsProcessing, setProgressTex
         
         if (pageCount === 0) continue;
 
-        const baseFileName = file.name.replace(/\.[^/.]+$/, "");
+        // Notify parent about the PDF for potential batch conversion
+        if (onPdfReady) {
+          onPdfReady(file, pageCount);
+        }
 
         for (let i = 0; i < pageCount; i++) {
           setProgressText(`${filePrefix}Extraindo página ${i + 1} de ${pageCount}...`);
@@ -52,7 +56,7 @@ export default function PdfSplitter({ onResults, setIsProcessing, setProgressTex
           
           allResults.push({
             id: `${Date.now()}-${fileIdx}-${i}`,
-            name: `${baseFileName}_p${i + 1}.pdf`,
+            name: `Pagina_${i + 1}.pdf`,
             url,
             type: 'pdf',
             blob

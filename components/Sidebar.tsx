@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Download, File as FileIcon, Loader2, Archive, Trash2 } from 'lucide-react';
+import { Download, File as FileIcon, Loader2, Archive, Trash2, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Image from 'next/image';
 
@@ -19,14 +19,41 @@ interface SidebarProps {
   progressText: string;
   onDownloadAll: () => void;
   onClear: () => void;
+  onConvertToPng?: () => void;
+  activeTool: string;
+  totalPdfPages?: number;
+  currentBatchStart?: number;
+  onNextBatch?: () => void;
 }
 
-export default function Sidebar({ results, isProcessing, progressText, onDownloadAll, onClear }: SidebarProps) {
+export default function Sidebar({ 
+  results, 
+  isProcessing, 
+  progressText, 
+  onDownloadAll, 
+  onClear, 
+  onConvertToPng, 
+  activeTool,
+  totalPdfPages = 0,
+  currentBatchStart = 1,
+  onNextBatch
+}: SidebarProps) {
+  const hasPdfs = results.length > 0 && results.some(r => r.type === 'pdf');
+  const isImageResults = results.length > 0 && results.every(r => r.type === 'image');
+  
+  const hasMorePages = totalPdfPages > 0 && (currentBatchStart + 19) < totalPdfPages;
+  const nextBatchRange = {
+    start: currentBatchStart + 20,
+    end: Math.min(currentBatchStart + 39, totalPdfPages)
+  };
+
   return (
     <aside className="w-full lg:w-80 shrink-0 border-l border-border bg-card h-full lg:h-[calc(100vh-64px)] flex flex-col sticky top-16">
       {/* Fixed Header */}
       <div className="p-4 border-b border-border flex items-center justify-between bg-secondary/50 shrink-0">
-        <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">Resultados</h3>
+        <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">
+          Resultados {results.length > 0 && `(${results.length} itens)`}
+        </h3>
         {results.length > 0 && !isProcessing && (
           <button 
             onClick={onClear}
@@ -101,15 +128,44 @@ export default function Sidebar({ results, isProcessing, progressText, onDownloa
       </div>
 
       {/* Fixed Footer */}
-      <div className="p-4 border-t border-border bg-secondary/50 shrink-0">
+      <div className="p-4 border-t border-border bg-secondary/50 shrink-0 space-y-3">
+        {hasMorePages && !isProcessing && onNextBatch && (
+          <button
+            onClick={onNextBatch}
+            className="w-full py-3 bg-secondary text-secondary-foreground border border-border rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-secondary/80 transition-all mb-2"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Converter próximas páginas ({nextBatchRange.start} a {nextBatchRange.end})
+          </button>
+        )}
+
         <button
           onClick={onDownloadAll}
           disabled={results.length === 0 || isProcessing}
           className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-bold flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100"
         >
           <Archive className="w-5 h-5" />
-          Baixar Tudo (.ZIP)
+          {isImageResults ? 'Baixar Imagens (.ZIP)' : 'Baixar Tudo (.ZIP)'}
         </button>
+
+        {activeTool === 'split-pdf' && hasPdfs && !isProcessing && onConvertToPng && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-4 bg-primary/10 border border-primary/20 rounded-xl space-y-3"
+          >
+            <p className="text-xs font-semibold text-center text-primary">
+              Deseja converter estas páginas para imagem (PNG) também?
+            </p>
+            <button
+              onClick={onConvertToPng}
+              className="w-full py-2 bg-white dark:bg-primary border border-primary rounded-lg text-xs font-bold text-primary dark:text-primary-foreground hover:bg-primary/5 transition-all flex items-center justify-center gap-2"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Sim, converter para PNG
+            </button>
+          </motion.div>
+        )}
       </div>
     </aside>
   );
