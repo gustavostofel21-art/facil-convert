@@ -14,7 +14,7 @@ export default function Header() {
           <div className="bg-primary p-1.5 rounded-lg">
             <Zap className="w-6 h-6 text-primary-foreground" />
           </div>
-          <span className="font-bold text-xl tracking-tight">Fácil Convert</span>
+          <span className="font-bold text-xl tracking-tight">Fácil Sist</span>
         </div>
         
         <button 
