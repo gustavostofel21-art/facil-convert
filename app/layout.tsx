@@ -6,7 +6,7 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
 export const metadata: Metadata = {
-  title: 'Fácil Convert',
+  title: 'Fácil Tools',
   description: 'Processamento de arquivos 100% no navegador.',
 };
 
