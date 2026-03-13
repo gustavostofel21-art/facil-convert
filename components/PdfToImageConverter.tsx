@@ -21,8 +21,8 @@ export default function PdfToImageConverter({ onResults, setIsProcessing, setPro
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Set worker source for v3
-    pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+    // Set worker source to local
+    pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
   }, []);
 
   const handleFileSelect = async (files: File | File[]) => {

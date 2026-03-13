@@ -13,14 +13,15 @@ import * as pdfjs from 'pdfjs-dist';
 const PdfSplitter = dynamic(() => import('@/components/PdfSplitter'), { ssr: false });
 const HeicBatchConverter = dynamic(() => import('@/components/HeicBatchConverter'), { ssr: false });
 const PdfToImageConverter = dynamic(() => import('@/components/PdfToImageConverter'), { ssr: false });
+const ImageToPdfConverter = dynamic(() => import('@/components/ImageToPdfConverter'), { ssr: false });
 const Calculadora = dynamic(() => import('@/components/Calculadora'), { ssr: false });
 
-// Set worker source for v3
+// Set worker source to local public folder
 if (typeof window !== 'undefined') {
-  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+  pdfjs.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.js`;
 }
 
-type Tool = 'split-pdf' | 'heic-batch' | 'pdf-to-image';
+type Tool = 'split-pdf' | 'heic-batch' | 'pdf-to-image' | 'image-to-pdf';
 type MainTab = 'conversor' | 'calculadora';
 
 export default function Home() {
@@ -141,40 +142,10 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground">
-      <Header />
+    <div className="flex flex-col min-h-screen bg-background text-foreground overflow-hidden">
+      <Header mainTab={mainTab} setMainTab={setMainTab} />
       
-      {/* Global Tabs Navigation */}
-      <div className="bg-card border-b border-border sticky top-16 z-40">
-        <div className="max-w-7xl mx-auto px-4 flex items-center justify-center">
-          <div className="flex p-1 bg-secondary/50 rounded-xl my-2">
-            <button
-              onClick={() => setMainTab('conversor')}
-              className={`px-8 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${
-                mainTab === 'conversor' 
-                  ? 'bg-primary text-primary-foreground shadow-lg' 
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <FileType className="w-4 h-4" />
-              Conversor
-            </button>
-            <button
-              onClick={() => setMainTab('calculadora')}
-              className={`px-8 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${
-                mainTab === 'calculadora' 
-                  ? 'bg-green-600 text-white shadow-lg' 
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Calculator className="w-4 h-4" />
-              Calculadora
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-col lg:flex-row flex-grow lg:h-[calc(100vh-128px)] overflow-hidden">
+      <div className="flex flex-col lg:flex-row flex-grow lg:h-[calc(100vh-64px)] overflow-hidden">
         {/* Main Content Area */}
         <main className="flex-1 min-w-0 p-4 md:p-8 lg:p-12 overflow-y-auto custom-scrollbar bg-background/50">
           <div className="max-w-4xl mx-auto">
@@ -221,6 +192,17 @@ export default function Home() {
                     >
                       <FileType className="w-5 h-5" />
                       <span className="font-semibold text-sm">PDF para Imagem</span>
+                    </button>
+                    <button
+                      onClick={() => setActiveTool('image-to-pdf')}
+                      className={`flex flex-col sm:flex-row items-center justify-center gap-2 p-4 rounded-xl border transition-all ${
+                        activeTool === 'image-to-pdf' 
+                          ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-green-600/20 scale-[1.02]" 
+                          : "bg-card border-border hover:bg-secondary/50"
+                      }`}
+                    >
+                      <ImageIcon className="w-5 h-5" />
+                      <span className="font-semibold text-sm text-center">Imagens para PDF</span>
                     </button>
                   </div>
 
@@ -271,6 +253,20 @@ export default function Home() {
                           />
                         </motion.div>
                       )}
+                      {activeTool === 'image-to-pdf' && (
+                        <motion.div
+                          key={`image-to-pdf-${toolKey}`}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                        >
+                          <ImageToPdfConverter 
+                            onResults={handleResults} 
+                            setIsProcessing={setIsProcessing} 
+                            setProgressText={setProgressText} 
+                          />
+                        </motion.div>
+                      )}
                     </AnimatePresence>
                   </div>
                 </motion.div>
@@ -295,7 +291,7 @@ export default function Home() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
-              className="w-full lg:w-96 flex-shrink-0 bg-card border-l border-border h-full overflow-y-auto pr-4 custom-scrollbar"
+              className="w-full lg:w-96 flex-shrink-0 bg-card border-l border-border h-full flex flex-col overflow-hidden"
             >
               <Sidebar 
                 results={results} 

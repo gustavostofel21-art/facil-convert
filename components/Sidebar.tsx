@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { Download, File as FileIcon, Loader2, Archive, Trash2, RefreshCw } from 'lucide-react';
+import React, { useState } from 'react';
+import { Download, File as FileIcon, Loader2, Archive, Trash2, RefreshCw, X, Maximize2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Image from 'next/image';
 
@@ -46,9 +46,12 @@ export default function Sidebar({
     start: currentBatchStart + 20,
     end: Math.min(currentBatchStart + 39, totalPdfPages)
   };
+  
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   return (
-    <aside className="w-full lg:w-80 shrink-0 border-l border-border bg-card h-full lg:h-[calc(100vh-64px)] flex flex-col sticky top-16">
+    <>
+      <aside className="w-full h-full flex flex-col bg-card">
       {/* Fixed Header */}
       <div className="p-4 border-b border-border flex items-center justify-between bg-secondary/50 shrink-0">
         <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">
@@ -70,6 +73,7 @@ export default function Sidebar({
         <AnimatePresence mode="popLayout">
           {isProcessing && (
             <motion.div 
+              key="processing-indicator"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
@@ -79,50 +83,69 @@ export default function Sidebar({
               <p className="text-sm font-medium">{progressText}</p>
             </motion.div>
           )}
+        </AnimatePresence>
 
-          {results.map((item) => (
-            <motion.div
-              key={item.id}
-              layout
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="group relative bg-background border border-border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all"
-            >
-              {item.type === 'image' ? (
-                <div className="relative aspect-square w-full bg-muted">
-                  <Image 
-                    src={item.url} 
-                    alt={item.name} 
-                    fill 
-                    className="object-cover"
-                    unoptimized
-                  />
+        <div className={isImageResults ? "grid grid-cols-2 gap-3" : "flex flex-col gap-3"}>
+          <AnimatePresence mode="popLayout">
+            {results.map((item) => (
+              <motion.div
+                key={item.id}
+                layout
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className={`group relative bg-background border border-border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all ${isImageResults ? "flex flex-col" : "flex items-center p-2 gap-3"}`}
+              >
+                {item.type === 'image' ? (
+                  <div 
+                    className="relative aspect-square w-full bg-muted overflow-hidden border-b border-border cursor-pointer group-hover:opacity-90 transition-opacity"
+                    onClick={() => setPreviewImage(item.url)}
+                  >
+                    <Image 
+                      src={item.url} 
+                      alt={item.name} 
+                      fill 
+                      className="object-cover"
+                      unoptimized
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                      <Maximize2 className="w-6 h-6 text-white" />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="h-16 w-16 bg-muted shrink-0 rounded-lg flex flex-col items-center justify-center gap-1 border border-border/50">
+                    <FileIcon className="w-6 h-6 text-primary/40" />
+                    <span className="text-[9px] font-mono text-muted-foreground uppercase">PDF</span>
+                  </div>
+                )}
+                
+                <div className={`flex items-center justify-between ${isImageResults ? "p-2" : "flex-grow min-w-0 pr-1"}`}>
+                  <span className="text-[11px] font-semibold truncate mr-2">{item.name}</span>
+                  <a 
+                    href={item.url} 
+                    download={item.name}
+                    className="p-2 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-primary-foreground transition-all shrink-0"
+                    title="Baixar Tabela/Imagem"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                  </a>
                 </div>
-              ) : (
-                <div className="aspect-square w-full bg-muted flex flex-col items-center justify-center gap-2 p-4">
-                  <FileIcon className="w-12 h-12 text-primary/40" />
-                  <span className="text-[10px] font-mono text-muted-foreground uppercase">PDF Page</span>
-                </div>
-              )}
-              
-              <div className="p-2 flex items-center justify-between gap-2">
-                <span className="text-[11px] font-medium truncate flex-grow">{item.name}</span>
-                <a 
-                  href={item.url} 
-                  download={item.name}
-                  className="p-1.5 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition-all"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                </a>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
 
+        <AnimatePresence>
           {!isProcessing && results.length === 0 && (
-            <div className="h-full flex flex-col items-center justify-center text-center p-8 text-muted-foreground/60">
+            <motion.div 
+              key="empty-state"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="h-full flex flex-col items-center justify-center text-center p-8 text-muted-foreground/60"
+            >
               <Archive className="w-12 h-12 mb-4 opacity-40" />
               <p className="text-sm">Nenhum resultado ainda. Processe um arquivo para começar.</p>
-            </div>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>
@@ -168,5 +191,38 @@ export default function Sidebar({
         )}
       </div>
     </aside>
+
+      {/* Full Screen Image Preview Modal */}
+      <AnimatePresence>
+        {previewImage && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/90 flex flex-col backdrop-blur-md"
+          >
+            <div className="flex items-center justify-end p-4 shrink-0">
+               <button 
+                 className="p-2 bg-white/10 hover:bg-destructive/80 text-white rounded-full transition-all"
+                 onClick={() => setPreviewImage(null)}
+               >
+                 <X className="w-6 h-6" />
+               </button>
+            </div>
+            
+            <div 
+              className="flex-grow flex items-center justify-center p-4 overflow-hidden relative cursor-zoom-out"
+              onClick={() => setPreviewImage(null)}
+            >
+              <img 
+                src={previewImage} 
+                alt="Preview Expandido" 
+                className="max-w-full max-h-full object-contain rounded-lg shadow-2xl" 
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

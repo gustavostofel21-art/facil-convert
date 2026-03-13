@@ -1,16 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Calculator, 
   Car, 
   Bike, 
   CloudRain, 
-  Calendar, 
   Clock, 
-  ChevronLeft, 
-  X,
-  RotateCcw
+  X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -37,8 +34,7 @@ export default function Calculadora() {
   };
 
   const handleFipeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatCurrency(e.target.value);
-    setFipeValue(formatted);
+    setFipeValue(formatCurrency(e.target.value));
   };
 
   const clearFipe = () => {
@@ -46,37 +42,64 @@ export default function Calculadora() {
     setNumericFipe(0);
   };
 
-  const clearDate = () => setDateInput('');
-  const clearStartDate = () => setStartDate('');
-  const clearEndDate = () => setEndDate('');
-
-  const resetAll = () => {
-    clearFipe();
-    clearDate();
-    clearStartDate();
-    clearEndDate();
-    setCategory('LEVE');
-  };
-
   const calculateCota = (percent: number, min: number) => {
     return Math.max(numericFipe * percent, min);
   };
 
+  const renderFipeInput = () => (
+    <div className="relative text-center">
+      <label className="block text-sm font-medium text-muted-foreground mb-3">Valor FIPE:</label>
+      <div className="relative">
+        <input 
+          type="text" 
+          value={fipeValue} 
+          onChange={handleFipeChange}
+          placeholder="R$ 0,00"
+          className="w-full py-4 px-5 text-center text-2xl font-bold bg-muted/60 border border-border/50 rounded-2xl focus:ring-2 focus:ring-[#37973d] outline-none transition-all text-foreground"
+        />
+        {fipeValue && (
+          <button onClick={clearFipe} className="absolute right-4 top-1/2 -translate-y-1/2 p-2 hover:bg-muted-foreground/20 rounded-xl text-muted-foreground transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderCategorySelect = () => (
+    <div className="pt-2 text-center">
+      <label className="block text-sm font-medium text-muted-foreground mb-4">Selecione o tipo de veículo:</label>
+      <div className="flex flex-col gap-3">
+        <CategoryTab active={category === 'LEVE'} onClick={() => setCategory('LEVE')} label="Leve, pequeno" />
+        <CategoryTab active={category === 'GRANDE'} onClick={() => setCategory('GRANDE')} label="Grande, pesado, Suv" />
+        <CategoryTab active={category === 'ESPECIAL'} onClick={() => setCategory('ESPECIAL')} label="Gp Especial/ Blindado" />
+      </div>
+    </div>
+  );
+
+  const VoltarBtn = ({ to }: { to: Screen }) => (
+    <div className="text-center pt-2">
+      <button onClick={() => setScreen(to)} className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors tracking-wider uppercase">
+        VOLTAR
+      </button>
+    </div>
+  );
+
   const renderMenu = () => (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-center mb-8 text-gray-800">Calculadora Facility</h1>
+    <div className="space-y-5 pt-2">
+      <h1 className="text-3xl font-extrabold text-center mb-10 text-foreground">Calculadora Facility</h1>
       <MenuButton 
-        icon={<Calculator className="w-6 h-6" />} 
+        icon={<Calculator className="w-6 h-6 text-white" />} 
         title="Cota de Participação" 
         onClick={() => setScreen('COTA_MENU')}
       />
       <MenuButton 
-        icon={<Car className="w-6 h-6" />} 
+        icon={<Car className="w-6 h-6 text-white" />} 
         title="Carro Reserva" 
         onClick={() => setScreen('CARRO_RESERVA')}
       />
       <MenuButton 
-        icon={<Clock className="w-6 h-6" />} 
+        icon={<Clock className="w-6 h-6 text-white" />} 
         title="Contador de Dias" 
         onClick={() => setScreen('CONTADOR_DIAS')}
       />
@@ -84,24 +107,24 @@ export default function Calculadora() {
   );
 
   const renderCotaMenu = () => (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold text-center mb-6 text-gray-800">Cota de Participação</h2>
+    <div className="space-y-5 pt-2">
+      <h2 className="text-3xl font-extrabold text-center mb-10 text-foreground">Cota de Participação</h2>
       <MenuButton 
-        icon={<Car className="w-6 h-6" />} 
+        icon={<Car className="w-6 h-6 text-white" />} 
         title="Carro" 
-        onClick={() => setScreen('COTA_CARRO')}
+        onClick={() => { setCategory('LEVE'); setScreen('COTA_CARRO'); }}
       />
       <MenuButton 
-        icon={<Bike className="w-6 h-6" />} 
+        icon={<Bike className="w-6 h-6 text-white" />} 
         title="Moto" 
-        onClick={() => setScreen('COTA_MOTO')}
+        onClick={() => { setCategory('LEVE'); setScreen('COTA_MOTO'); }}
       />
       <MenuButton 
-        icon={<CloudRain className="w-6 h-6" />} 
+        icon={<CloudRain className="w-6 h-6 text-white" />} 
         title="Alagamento" 
-        onClick={() => setScreen('COTA_ALAGAMENTO')}
+        onClick={() => { setCategory('LEVE'); setScreen('COTA_ALAGAMENTO'); }}
       />
-      <BackButton onClick={() => setScreen('MENU')} />
+      <VoltarBtn to="MENU" />
     </div>
   );
 
@@ -110,51 +133,33 @@ export default function Calculadora() {
     let min = 1500;
     if (category === 'GRANDE') { percent = 0.05; min = 2000; }
     if (category === 'ESPECIAL') { percent = 0.10; min = 3000; }
-
     const result = calculateCota(percent, min);
 
     return (
-      <div className="space-y-6">
-        <h2 className="text-xl font-bold text-center text-gray-800">Cota Carro</h2>
-        
-        <div className="flex gap-2">
-          <CategoryTab active={category === 'LEVE'} onClick={() => setCategory('LEVE')} label="Leve" />
-          <CategoryTab active={category === 'GRANDE'} onClick={() => setCategory('GRANDE')} label="Grande" />
-          <CategoryTab active={category === 'ESPECIAL'} onClick={() => setCategory('ESPECIAL')} label="Especial" />
-        </div>
-
-        <div className="relative">
-          <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Valor FIPE</label>
-          <div className="relative">
-            <input 
-              type="text" 
-              value={fipeValue} 
-              onChange={handleFipeChange}
-              placeholder="R$ 0,00"
-              className="w-full p-4 pr-12 text-lg font-bold bg-gray-100 border-none rounded-2xl focus:ring-2 focus:ring-[#388E3C] outline-none transition-all text-gray-800"
-            />
-            {fipeValue && (
-              <button onClick={clearFipe} className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 rounded-full text-gray-400">
-                <X className="w-5 h-5" />
-              </button>
-            )}
-          </div>
-        </div>
+      <div className="space-y-6 pt-2">
+        <h2 className="text-3xl font-extrabold text-center text-foreground">Cálculo para Carro</h2>
+        {renderFipeInput()}
+        {renderCategorySelect()}
 
         {numericFipe > 0 && (
-          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
-            <ResultBox label={`Cota ${percent * 100}%`} value={result} />
-            <ResultBox label="Cota em Dobro" value={result * 2} />
+          <div className="mt-8 flex flex-row items-center justify-between border border-[#37973d]/40 bg-[#37973d]/5 dark:bg-[#37973d]/10 rounded-2xl p-5 shadow-sm animate-in fade-in slide-in-from-bottom-2">
+            <div className="flex-1 text-center border-r border-[#37973d]/20 pr-4">
+              <p className="text-xs text-muted-foreground uppercase font-semibold mb-1.5">Cota {percent * 100}%</p>
+              <p className="text-2xl font-black text-[#37973d] dark:text-[#4ade80]">
+                {result.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              </p>
+            </div>
+            <div className="flex-1 text-center pl-4">
+              <p className="text-xs text-muted-foreground uppercase font-semibold mb-1.5">Cota em dobro</p>
+              <p className="text-2xl font-black text-[#37973d] dark:text-[#4ade80]">
+                {(result * 2).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              </p>
+            </div>
           </div>
         )}
 
-        <div className="flex gap-3">
-          <button onClick={resetAll} className="flex-1 py-4 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-2xl transition-all flex items-center justify-center gap-2">
-            <RotateCcw className="w-5 h-5" /> Limpar
-          </button>
-          <button onClick={() => setScreen('COTA_MENU')} className="flex-1 py-4 bg-[#388E3C] hover:bg-[#1E8838] text-white font-bold rounded-2xl transition-all">
-            VOLTAR
-          </button>
+        <div className="pt-6 flex flex-col gap-5">
+          <VoltarBtn to="COTA_MENU" />
         </div>
       </div>
     );
@@ -162,43 +167,30 @@ export default function Calculadora() {
 
   const renderCotaMoto = () => {
     const result = calculateCota(0.10, 2000);
-
     return (
-      <div className="space-y-6">
-        <h2 className="text-xl font-bold text-center text-gray-800">Cota Moto</h2>
-        
-        <div className="relative">
-          <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Valor FIPE</label>
-          <div className="relative">
-            <input 
-              type="text" 
-              value={fipeValue} 
-              onChange={handleFipeChange}
-              placeholder="R$ 0,00"
-              className="w-full p-4 pr-12 text-lg font-bold bg-gray-100 border-none rounded-2xl focus:ring-2 focus:ring-[#388E3C] outline-none transition-all text-gray-800"
-            />
-            {fipeValue && (
-              <button onClick={clearFipe} className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 rounded-full text-gray-400">
-                <X className="w-5 h-5" />
-              </button>
-            )}
-          </div>
-        </div>
+      <div className="space-y-6 pt-2">
+        <h2 className="text-3xl font-extrabold text-center text-foreground">Cálculo para Moto</h2>
+        {renderFipeInput()}
 
         {numericFipe > 0 && (
-          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
-            <ResultBox label="Cota 10%" value={result} />
-            <ResultBox label="Cota em Dobro" value={result * 2} />
+          <div className="mt-8 flex flex-row items-center justify-between border border-[#37973d]/40 bg-[#37973d]/5 dark:bg-[#37973d]/10 rounded-2xl p-5 shadow-sm animate-in fade-in slide-in-from-bottom-2">
+            <div className="flex-1 text-center border-r border-[#37973d]/20 pr-4">
+              <p className="text-xs text-muted-foreground uppercase font-semibold mb-1.5">Cota 10%</p>
+              <p className="text-2xl font-black text-[#37973d] dark:text-[#4ade80]">
+                {result.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              </p>
+            </div>
+            <div className="flex-1 text-center pl-4">
+              <p className="text-xs text-muted-foreground uppercase font-semibold mb-1.5">Cota em dobro</p>
+              <p className="text-2xl font-black text-[#37973d] dark:text-[#4ade80]">
+                {(result * 2).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              </p>
+            </div>
           </div>
         )}
 
-        <div className="flex gap-3">
-          <button onClick={resetAll} className="flex-1 py-4 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-2xl transition-all flex items-center justify-center gap-2">
-            <RotateCcw className="w-5 h-5" /> Limpar
-          </button>
-          <button onClick={() => setScreen('COTA_MENU')} className="flex-1 py-4 bg-[#388E3C] hover:bg-[#1E8838] text-white font-bold rounded-2xl transition-all">
-            VOLTAR
-          </button>
+        <div className="pt-6 flex flex-col gap-5">
+          <VoltarBtn to="COTA_MENU" />
         </div>
       </div>
     );
@@ -208,50 +200,27 @@ export default function Calculadora() {
     let min = 1500;
     if (category === 'GRANDE') min = 2000;
     if (category === 'ESPECIAL') min = 3000;
-
     const result = calculateCota(0.15, min);
 
     return (
-      <div className="space-y-6">
-        <h2 className="text-xl font-bold text-center text-gray-800">Cota Alagamento</h2>
-        
-        <div className="flex gap-2">
-          <CategoryTab active={category === 'LEVE'} onClick={() => setCategory('LEVE')} label="Leve" />
-          <CategoryTab active={category === 'GRANDE'} onClick={() => setCategory('GRANDE')} label="Grande" />
-          <CategoryTab active={category === 'ESPECIAL'} onClick={() => setCategory('ESPECIAL')} label="Especial" />
-        </div>
-
-        <div className="relative">
-          <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Valor FIPE</label>
-          <div className="relative">
-            <input 
-              type="text" 
-              value={fipeValue} 
-              onChange={handleFipeChange}
-              placeholder="R$ 0,00"
-              className="w-full p-4 pr-12 text-lg font-bold bg-gray-100 border-none rounded-2xl focus:ring-2 focus:ring-[#388E3C] outline-none transition-all text-gray-800"
-            />
-            {fipeValue && (
-              <button onClick={clearFipe} className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 rounded-full text-gray-400">
-                <X className="w-5 h-5" />
-              </button>
-            )}
-          </div>
-        </div>
+      <div className="space-y-6 pt-2">
+        <h2 className="text-3xl font-extrabold text-center text-foreground">Cálculo Alagamento</h2>
+        {renderFipeInput()}
+        {renderCategorySelect()}
 
         {numericFipe > 0 && (
-          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
-            <ResultBox label="Cota 15%" value={result} />
+          <div className="mt-8 flex flex-row items-center justify-center border border-[#37973d]/40 bg-[#37973d]/5 dark:bg-[#37973d]/10 rounded-2xl p-6 shadow-sm animate-in fade-in slide-in-from-bottom-2">
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground uppercase font-semibold mb-2">Cota 15%</p>
+              <p className="text-3xl font-black text-[#37973d] dark:text-[#4ade80]">
+                {result.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              </p>
+            </div>
           </div>
         )}
 
-        <div className="flex gap-3">
-          <button onClick={resetAll} className="flex-1 py-4 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-2xl transition-all flex items-center justify-center gap-2">
-            <RotateCcw className="w-5 h-5" /> Limpar
-          </button>
-          <button onClick={() => setScreen('COTA_MENU')} className="flex-1 py-4 bg-[#388E3C] hover:bg-[#1E8838] text-white font-bold rounded-2xl transition-all">
-            VOLTAR
-          </button>
+        <div className="pt-6 flex flex-col gap-5">
+          <VoltarBtn to="COTA_MENU" />
         </div>
       </div>
     );
@@ -266,20 +235,20 @@ export default function Calculadora() {
     }
 
     return (
-      <div className="space-y-6">
-        <h2 className="text-xl font-bold text-center text-gray-800">Carro Reserva</h2>
+      <div className="space-y-6 pt-2">
+        <h2 className="text-3xl font-extrabold text-center text-foreground">Carro Reserva</h2>
         
-        <div className="relative">
-          <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Data de Início</label>
+        <div className="relative text-center">
+          <label className="block text-sm font-medium text-muted-foreground mb-4">Selecione a data do evento:</label>
           <div className="relative">
             <input 
               type="date" 
               value={dateInput}
               onChange={(e) => setDateInput(e.target.value)}
-              className="w-full p-4 pr-12 bg-gray-100 border-none rounded-2xl focus:ring-2 focus:ring-[#388E3C] outline-none transition-all text-gray-800"
+              className="w-full py-4 px-5 text-center text-xl sm:text-2xl font-bold bg-muted/60 border border-border/50 rounded-2xl focus:ring-2 focus:ring-[#37973d] outline-none transition-all text-foreground"
             />
             {dateInput && (
-              <button onClick={clearDate} className="absolute right-12 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 rounded-full text-gray-400">
+              <button onClick={() => setDateInput('')} className="absolute right-12 top-1/2 -translate-y-1/2 p-2 hover:bg-muted-foreground/20 rounded-xl text-muted-foreground transition-colors">
                 <X className="w-5 h-5" />
               </button>
             )}
@@ -287,19 +256,14 @@ export default function Calculadora() {
         </div>
 
         {dateInput && (
-          <div className="p-6 bg-[#388E3C] text-white rounded-2xl shadow-lg animate-in zoom-in-95">
-            <p className="text-xs font-bold uppercase opacity-80 mb-1">Data de Devolução (30 dias)</p>
-            <p className="text-3xl font-bold">{resultDate}</p>
+          <div className="mt-8 text-center border border-[#37973d]/40 bg-[#37973d]/5 dark:bg-[#37973d]/10 rounded-2xl p-8 shadow-sm animate-in fade-in slide-in-from-bottom-2">
+            <p className="text-sm text-muted-foreground font-semibold mb-2">Pode solicitar até:</p>
+            <p className="text-3xl font-black text-[#37973d] dark:text-[#4ade80]">{resultDate}</p>
           </div>
         )}
 
-        <div className="flex gap-3">
-          <button onClick={resetAll} className="flex-1 py-4 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-2xl transition-all flex items-center justify-center gap-2">
-            <RotateCcw className="w-5 h-5" /> Limpar
-          </button>
-          <button onClick={() => setScreen('MENU')} className="flex-1 py-4 bg-[#388E3C] hover:bg-[#1E8838] text-white font-bold rounded-2xl transition-all">
-            VOLTAR
-          </button>
+        <div className="pt-6 flex flex-col gap-5">
+          <VoltarBtn to="MENU" />
         </div>
       </div>
     );
@@ -307,6 +271,8 @@ export default function Calculadora() {
 
   const renderContadorDias = () => {
     let diffDays = 0;
+    let isValid = false;
+    
     if (startDate && endDate) {
       const start = new Date(startDate + 'T00:00:00');
       const end = new Date(endDate + 'T00:00:00');
@@ -315,76 +281,60 @@ export default function Calculadora() {
       
       const diffMs = end.getTime() - start.getTime();
       diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24)) + 1;
+      isValid = true;
     }
 
     return (
-      <div className="space-y-6">
-        <h2 className="text-xl font-bold text-center text-gray-800">Contador de Dias</h2>
+      <div className="space-y-6 pt-2">
+        <h2 className="text-3xl font-extrabold text-center text-foreground">Controle de Datas</h2>
         
-        <div className="space-y-4">
-          <div className="relative">
-            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Data Inicial</label>
-            <div className="relative">
-              <input 
-                type="date" 
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-full p-4 pr-12 bg-gray-100 border-none rounded-2xl focus:ring-2 focus:ring-[#388E3C] outline-none transition-all text-gray-800"
-              />
-              {startDate && (
-                <button onClick={clearStartDate} className="absolute right-12 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 rounded-full text-gray-400">
-                  <X className="w-5 h-5" />
-                </button>
-              )}
-            </div>
+        <div className="space-y-5">
+          <div className="relative text-center">
+            <label className="block text-sm font-medium text-muted-foreground mb-3">Data Inicial:</label>
+            <input 
+              type="date" 
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full py-4 px-5 text-center text-xl sm:text-2xl font-bold bg-muted/60 border border-border/50 rounded-2xl focus:ring-2 focus:ring-[#37973d] outline-none transition-all text-foreground"
+            />
           </div>
-          <div className="relative">
-            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Data Final</label>
-            <div className="relative">
-              <input 
-                type="date" 
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-full p-4 pr-12 bg-gray-100 border-none rounded-2xl focus:ring-2 focus:ring-[#388E3C] outline-none transition-all text-gray-800"
-              />
-              {endDate && (
-                <button onClick={clearEndDate} className="absolute right-12 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 rounded-full text-gray-400">
-                  <X className="w-5 h-5" />
-                </button>
-              )}
-            </div>
+          <div className="relative text-center">
+            <label className="block text-sm font-medium text-muted-foreground mb-3">Data Final:</label>
+            <input 
+              type="date" 
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-full py-4 px-5 text-center text-xl sm:text-2xl font-bold bg-muted/60 border border-border/50 rounded-2xl focus:ring-2 focus:ring-[#37973d] outline-none transition-all text-foreground"
+            />
           </div>
         </div>
 
-        {startDate && endDate && (
-          <div className={`p-6 rounded-2xl shadow-lg animate-in zoom-in-95 ${diffDays >= 0 ? 'bg-[#388E3C] text-white' : 'bg-red-500 text-white'}`}>
-            <p className="text-xs font-bold uppercase opacity-80 mb-1">Total de Dias (Inclusivo)</p>
-            <p className="text-3xl font-bold">{diffDays} {Math.abs(diffDays) === 1 ? 'dia' : 'dias'}</p>
+        {isValid && (
+          <div className={`mt-8 text-center border rounded-2xl p-8 shadow-sm animate-in fade-in slide-in-from-bottom-2 ${diffDays >= 0 ? 'border-[#37973d]/40 bg-[#37973d]/5 dark:bg-[#37973d]/10' : 'border-destructive/40 bg-destructive/5'}`}>
+            <p className="text-sm text-muted-foreground font-semibold mb-2">Total de Dias (Inclusivo):</p>
+            <p className={`text-4xl font-black ${diffDays >= 0 ? 'text-[#37973d] dark:text-[#4ade80]' : 'text-destructive dark:text-red-400'}`}>
+              {diffDays} {Math.abs(diffDays) === 1 ? 'dia' : 'dias'}
+            </p>
           </div>
         )}
 
-        <div className="flex gap-3">
-          <button onClick={resetAll} className="flex-1 py-4 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-2xl transition-all flex items-center justify-center gap-2">
-            <RotateCcw className="w-5 h-5" /> Limpar
-          </button>
-          <button onClick={() => setScreen('MENU')} className="flex-1 py-4 bg-[#388E3C] hover:bg-[#1E8838] text-white font-bold rounded-2xl transition-all">
-            VOLTAR
-          </button>
+        <div className="pt-6 flex flex-col gap-5">
+          <VoltarBtn to="MENU" />
         </div>
       </div>
     );
   };
 
   return (
-    <div className="flex items-center justify-center py-8">
-      <div className="bg-white rounded-[2.5rem] shadow-2xl p-8 max-w-sm w-full mx-auto border border-gray-100">
+    <div className="w-full max-w-lg lg:max-w-xl mx-auto flex items-center justify-center py-4 sm:py-8 px-4">
+      <div className="bg-card text-card-foreground rounded-[2.5rem] shadow-2xl p-6 sm:p-10 w-full border border-border/40 transition-all dark:shadow-none dark:border-border">
         <AnimatePresence mode="wait">
           <motion.div
             key={screen}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
           >
             {screen === 'MENU' && renderMenu()}
             {screen === 'COTA_MENU' && renderCotaMenu()}
@@ -404,23 +354,12 @@ function MenuButton({ icon, title, onClick }: { icon: React.ReactNode, title: st
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center gap-4 p-5 bg-[#388E3C] hover:bg-[#1E8838] text-white rounded-2xl transition-all shadow-md active:scale-95"
+      className="w-full flex flex-row items-center gap-5 py-5 px-6 bg-[#37973d] hover:bg-[#2f8234] text-white rounded-2xl transition-all shadow-md hover:shadow-lg shadow-[#37973d]/20 active:scale-[0.98]"
     >
-      <div className="p-2 bg-white/20 rounded-xl">
+      <div className="p-2 bg-white/20 rounded-xl shrink-0 backdrop-blur-sm">
         {icon}
       </div>
-      <span className="font-bold text-lg">{title}</span>
-    </button>
-  );
-}
-
-function BackButton({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="w-full py-4 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-2xl transition-all mt-4"
-    >
-      VOLTAR
+      <span className="font-extrabold text-lg tracking-wide">{title}</span>
     </button>
   );
 }
@@ -429,24 +368,13 @@ function CategoryTab({ active, onClick, label }: { active: boolean, onClick: () 
   return (
     <button
       onClick={onClick}
-      className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${
+      className={`w-full py-4 px-5 rounded-2xl font-bold text-base transition-all ${
         active 
-          ? 'bg-[#388E3C] text-white shadow-md' 
-          : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+          ? 'bg-[#37973d] text-white shadow-md shadow-[#37973d]/20 scale-[1.02]' 
+          : 'bg-muted text-muted-foreground hover:bg-muted-foreground/10 hover:text-foreground'
       }`}
     >
       {label}
     </button>
-  );
-}
-
-function ResultBox({ label, value }: { label: string, value: number }) {
-  return (
-    <div className="p-4 bg-gray-50 border border-gray-100 rounded-2xl">
-      <p className="text-xs font-bold text-gray-500 uppercase mb-1">{label}</p>
-      <p className="text-2xl font-black text-[#388E3C]">
-        {value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-      </p>
-    </div>
   );
 }
