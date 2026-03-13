@@ -145,46 +145,40 @@ export default function ImageToPdfConverter({ onResults, setIsProcessing, setPro
         <div className="space-y-4">
           <h3 className="font-semibold text-lg border-b border-border pb-2">Ordem do PDF</h3>
           <div className="flex flex-col gap-2 max-h-[350px] overflow-y-auto custom-scrollbar p-1">
-            <AnimatePresence>
-              {images.map((img, index) => (
-                <motion.div 
-                  key={img.id}
-                  layout
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="flex items-center gap-3 p-3 bg-card border border-border rounded-xl shadow-sm"
-                >
-                  <span className="font-bold text-muted-foreground w-6 text-center">{index + 1}</span>
-                  <div className="w-12 h-12 relative rounded overflow-hidden bg-muted border border-border shrink-0">
-                    <img src={img.previewUrl} alt="preview" className="object-cover w-full h-full" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold truncate text-foreground">{img.file.name}</p>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button 
-                      onClick={() => moveUp(index)} disabled={index === 0}
-                      className="p-1.5 hover:bg-muted text-muted-foreground disabled:opacity-30 rounded-lg transition-colors"
-                    >
-                      <ArrowUp className="w-4 h-4" />
-                    </button>
-                    <button 
-                      onClick={() => moveDown(index)} disabled={index === images.length - 1}
-                      className="p-1.5 hover:bg-muted text-muted-foreground disabled:opacity-30 rounded-lg transition-colors"
-                    >
-                      <ArrowDown className="w-4 h-4" />
-                    </button>
-                    <button 
-                      onClick={() => removeImage(index)}
-                      className="p-1.5 hover:bg-destructive/10 text-destructive rounded-lg transition-colors ml-1"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
+            {images.map((img, index) => (
+              <div 
+                key={img.id}
+                className="flex items-center gap-3 p-3 bg-card border border-border rounded-xl shadow-sm hover:border-primary/30 transition-colors"
+              >
+                <span className="font-bold text-muted-foreground w-6 text-center">{index + 1}</span>
+                <div className="w-12 h-12 relative rounded overflow-hidden bg-muted border border-border shrink-0 flex items-center justify-center">
+                  <img src={img.previewUrl} alt="preview" className="max-w-full max-h-full object-cover" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold truncate text-foreground">{img.file.name}</p>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button 
+                    onClick={() => moveUp(index)} disabled={index === 0}
+                    className="p-1.5 hover:bg-muted text-muted-foreground disabled:opacity-30 rounded-lg transition-colors"
+                  >
+                    <ArrowUp className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={() => moveDown(index)} disabled={index === images.length - 1}
+                    className="p-1.5 hover:bg-muted text-muted-foreground disabled:opacity-30 rounded-lg transition-colors"
+                  >
+                    <ArrowDown className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={() => removeImage(index)}
+                    className="p-1.5 hover:bg-destructive/10 text-destructive rounded-lg transition-colors ml-1"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
 
           <button

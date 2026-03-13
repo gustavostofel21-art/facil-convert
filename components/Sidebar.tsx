@@ -87,7 +87,7 @@ export default function Sidebar({
 
         <div className={isImageResults ? "grid grid-cols-2 gap-3" : "flex flex-col gap-3"}>
           <AnimatePresence mode="popLayout">
-            {results.map((item) => (
+            {results.map((item, index) => (
               <motion.div
                 key={item.id}
                 layout
@@ -107,15 +107,21 @@ export default function Sidebar({
                       className="object-cover"
                       unoptimized
                     />
+                    <div className="absolute top-2 left-2 z-10 bg-black/60 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-md pointer-events-none">
+                      {index + 1}
+                    </div>
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                       <Maximize2 className="w-6 h-6 text-white" />
                     </div>
                   </div>
                 ) : (
-                  <div className="h-16 w-16 bg-muted shrink-0 rounded-lg flex flex-col items-center justify-center gap-1 border border-border/50">
-                    <FileIcon className="w-6 h-6 text-primary/40" />
-                    <span className="text-[9px] font-mono text-muted-foreground uppercase">PDF</span>
-                  </div>
+                  <>
+                    <span className="font-bold text-muted-foreground w-6 text-center text-sm">{index + 1}</span>
+                    <div className="h-16 w-16 bg-muted shrink-0 rounded-lg flex flex-col items-center justify-center gap-1 border border-border/50">
+                      <FileIcon className="w-6 h-6 text-primary/40" />
+                      <span className="text-[9px] font-mono text-muted-foreground uppercase">PDF</span>
+                    </div>
+                  </>
                 )}
                 
                 <div className={`flex items-center justify-between ${isImageResults ? "p-2" : "flex-grow min-w-0 pr-1"}`}>
@@ -152,7 +158,7 @@ export default function Sidebar({
 
       {/* Fixed Footer */}
       <div className="p-4 border-t border-border bg-secondary/50 shrink-0 space-y-3">
-        {hasMorePages && !isProcessing && onNextBatch && (
+        {hasMorePages && !isProcessing && onNextBatch && isImageResults && (
           <button
             onClick={onNextBatch}
             className="w-full py-3 bg-secondary text-secondary-foreground border border-border rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-secondary/80 transition-all mb-2"

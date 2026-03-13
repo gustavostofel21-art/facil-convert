@@ -245,7 +245,7 @@ export default function Calculadora() {
               type="date" 
               value={dateInput}
               onChange={(e) => setDateInput(e.target.value)}
-              className="w-full py-4 px-5 text-center text-xl sm:text-2xl font-bold bg-muted/60 border border-border/50 rounded-2xl focus:ring-2 focus:ring-[#37973d] outline-none transition-all text-foreground"
+              className="w-full py-3 px-2 sm:py-4 sm:px-5 text-center text-base sm:text-2xl font-bold bg-muted/60 border border-border/50 rounded-2xl focus:ring-2 focus:ring-[#37973d] outline-none transition-all text-foreground m-0 appearance-none max-w-full"
             />
             {dateInput && (
               <button onClick={() => setDateInput('')} className="absolute right-12 top-1/2 -translate-y-1/2 p-2 hover:bg-muted-foreground/20 rounded-xl text-muted-foreground transition-colors">
@@ -295,7 +295,7 @@ export default function Calculadora() {
               type="date" 
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full py-4 px-5 text-center text-xl sm:text-2xl font-bold bg-muted/60 border border-border/50 rounded-2xl focus:ring-2 focus:ring-[#37973d] outline-none transition-all text-foreground"
+              className="w-full py-3 px-2 sm:py-4 sm:px-5 text-center text-base sm:text-2xl font-bold bg-muted/60 border border-border/50 rounded-2xl focus:ring-2 focus:ring-[#37973d] outline-none transition-all text-foreground m-0 appearance-none max-w-full"
             />
           </div>
           <div className="relative text-center">
@@ -304,7 +304,7 @@ export default function Calculadora() {
               type="date" 
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full py-4 px-5 text-center text-xl sm:text-2xl font-bold bg-muted/60 border border-border/50 rounded-2xl focus:ring-2 focus:ring-[#37973d] outline-none transition-all text-foreground"
+              className="w-full py-3 px-2 sm:py-4 sm:px-5 text-center text-base sm:text-2xl font-bold bg-muted/60 border border-border/50 rounded-2xl focus:ring-2 focus:ring-[#37973d] outline-none transition-all text-foreground m-0 appearance-none max-w-full"
             />
           </div>
         </div>

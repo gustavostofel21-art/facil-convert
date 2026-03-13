@@ -34,50 +34,54 @@ export default function PdfToImageConverter({ onResults, setIsProcessing, setPro
     const allResults: ResultItem[] = [];
 
     try {
-      // For PDF to Image, we only support one file at a time for batching logic
-      const file = fileList[0];
+      const limitFiles = Math.min(fileList.length, 20); // Limit to 20 PDFs
       
-      setProgressText(`Carregando PDF...`);
-      const arrayBuffer = await file.arrayBuffer();
-      const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
-      const pdf = await loadingTask.promise;
-      const numPages = pdf.numPages;
-      
-      if (onPdfReady) {
-        onPdfReady(file, numPages);
-      }
+      for (let fIdx = 0; fIdx < limitFiles; fIdx++) {
+        const file = fileList[fIdx];
+        setProgressText(`Carregando PDF ${fIdx + 1} de ${limitFiles}...`);
+        
+        const arrayBuffer = await file.arrayBuffer();
+        const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
+        const pdf = await loadingTask.promise;
+        const numPages = pdf.numPages;
+        
+        // Se for o primeiro PDF inserido no lote, vamos alertar o sistema (ex. para processamento adicional se for o caso)
+        if (fIdx === 0 && onPdfReady) {
+          onPdfReady(file, numPages);
+        }
 
-      const limit = Math.min(numPages, 20);
+        const limit = Math.min(numPages, 20);
 
-      for (let i = 1; i <= limit; i++) {
-        setProgressText(`Renderizando página ${i} de ${numPages}...`);
-        
-        const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: 2.0 }); // High quality
-        
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        if (!context) throw new Error('Falha ao criar contexto canvas');
-        
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-        
-        await page.render({
-          canvasContext: context,
-          viewport: viewport
-        }).promise;
-        
-        const dataUrl = canvas.toDataURL('image/png');
-        const response = await fetch(dataUrl);
-        const blob = await response.blob();
-        
-        allResults.push({
-          id: `${Date.now()}-0-${i}`,
-          name: `Pagina_${i}.png`,
-          url: dataUrl,
-          type: 'image',
-          blob
-        });
+        for (let i = 1; i <= limit; i++) {
+          setProgressText(`Renderizando página ${i} de ${numPages} (PDF ${fIdx + 1})...`);
+          
+          const page = await pdf.getPage(i);
+          const viewport = page.getViewport({ scale: 2.0 }); // High quality
+          
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          if (!context) continue;
+          
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+          
+          await page.render({
+            canvasContext: context,
+            viewport: viewport
+          }).promise;
+          
+          const dataUrl = canvas.toDataURL('image/png');
+          const response = await fetch(dataUrl);
+          const blob = await response.blob();
+          
+          allResults.push({
+            id: `${Date.now()}-${fIdx}-${i}`,
+            name: fileList.length > 1 ? `PDF_${fIdx + 1}_Pag_${i}.png` : `Pagina_${i}.png`,
+            url: dataUrl,
+            type: 'image',
+            blob
+          });
+        }
       }
 
       onResults(allResults);
@@ -111,9 +115,10 @@ export default function PdfToImageConverter({ onResults, setIsProcessing, setPro
         <FileDropzone
           onFileSelect={handleFileSelect}
           accept=".pdf"
-          label="Arraste seu PDF aqui"
-          description="As páginas serão convertidas em imagens individuais. Lotes de 20 páginas por vez."
+          label="Arraste seus PDFs aqui"
+          description="Você pode selecionar múltiplos PDFs (limite 20). Lotes de 20 páginas por vez."
           icon={<FileImage className="w-10 h-10 text-primary/60" />}
+          multiple
         />
 
         {error && (

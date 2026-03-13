@@ -116,10 +116,19 @@ export default function Home() {
         });
       }
 
-      // Clear previous batch results
-      results.forEach(item => URL.revokeObjectURL(item.url));
-      setResults(imageResults);
+      if (start === 1) {
+        // Limpa os arquivos da conversão anterior (ex. o arquivo em PDF dividido) para dar lugar às imagens
+        results.forEach(item => URL.revokeObjectURL(item.url));
+        setResults(imageResults);
+      } else {
+        // Adiciona as novas imagens ao lote já existente
+        setResults(prev => [...prev, ...imageResults]);
+      }
       setCurrentBatchStart(start);
+      // pdf.destroy() ajuda a liberar memória
+      if (typeof pdf.destroy === 'function') {
+        pdf.destroy();
+      }
     } catch (err) {
       console.error(err);
       alert('Erro ao converter páginas para imagem.');
